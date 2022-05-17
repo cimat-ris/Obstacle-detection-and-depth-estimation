@@ -9,13 +9,14 @@ matplotlib.use('Agg')
 class Trainer(object):
 	def __init__(self, config, model, rng):
 		self.config = config
+		print(config)
 		self.model = model
 
 	def train(self):
 		print("[*] Training starts...")
 		history = self.model.train()
 		self.plot_metrics(history)
-	
+
 	def resume_training(self):
 		print("resuming training from weights file: ", self.config.weights_path)
 		history = self.model.resume_training(self.config.weights_path, self.config.initial_epoch)
@@ -136,7 +137,7 @@ class Trainer(object):
 		plt.savefig('lossdetection.pdf')
 		plt.close(fig)
 		#plt.show()
-		# yolo loss 
+		# yolo loss
 		fig = plt.figure()
 		plt.plot(history.history['detection_output_yolo_objconf_loss'], label = 'Training value', color = 'darkslategray')
 		plt.plot(history.history['val_detection_output_yolo_objconf_loss'], label = 'Validation value', color = 'darkslategray', linestyle = '--')
@@ -197,10 +198,10 @@ class Trainer(object):
 		plt.savefig('yolo_var_loss.pdf')
 		plt.close(fig)
 
-		# convert the history.history dict to a pandas DataFrame:     
+		# convert the history.history dict to a pandas DataFrame:
 		hist_df = pd.DataFrame(history.history)
 
-		# or save to csv: 
+		# or save to csv:
 		hist_csv_file = 'history.csv'
 		with open(hist_csv_file, mode='w') as f:
 			hist_df.to_csv(f)
