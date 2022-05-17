@@ -1,7 +1,7 @@
 import tensorflow as tf
 import keras.backend as K
 import numpy as np
-from DepthMetrics import rmse_metric
+from .DepthMetrics import rmse_metric
 
 def numpy_overlap(x1, w1, x2, w2):
     l1 = (x1) - w1 / 2
@@ -42,7 +42,7 @@ def iou(y_true, y_pred):
 	# adjust w, h
 	if size == 5:
 		# Anchors
-		anchors = np.array([[0.34755122, 0.84069513], 
+		anchors = np.array([[0.34755122, 0.84069513],
 							[0.14585618, 0.25650666]], dtype=np.float32)
 		pred_wh_tensor = K.exp(y_pred[..., 3:5]) * K.reshape(anchors, [1, 1, 1, 2, 2]) # relative to image shape
 	else:
@@ -76,7 +76,7 @@ def iou(y_true, y_pred):
 		offset = K.reshape(tf.convert_to_tensor(rows, dtype=np.float32), [1, 5, 8, 2, 2])
 	else:
 		offset = K.reshape(tf.convert_to_tensor(rows, dtype=np.float32), [1, 40, 2])
-	
+
 	# adjust true min and max
 	if size == 5:
 		true_wh_cell = true_wh_tensor * K.reshape([grid, grid], [1, 1, 1, 2, 2])
@@ -113,7 +113,7 @@ def iou(y_true, y_pred):
 def iou_metric(y_true, y_pred):
 	# call iou
 	iou_scores = iou(y_true, y_pred)
-	# mask 
+	# mask
 	conf_mask = K.expand_dims(y_true[..., 0], axis=-1)
 	# iou mean
 	ave_iou = tf.reduce_sum(K.expand_dims(iou_scores, axis=-1) * conf_mask) / (tf.reduce_sum(conf_mask) + K.epsilon())
@@ -122,7 +122,7 @@ def iou_metric(y_true, y_pred):
 def recall(y_true, y_pred):
 	# call iou
 	iou_scores = iou(y_true, y_pred)
-	# mask 
+	# mask
 	conf_mask = K.expand_dims(y_true[..., 0], axis=-1)
 	# counter: true positives + false negatives
 	true_p_false_n = tf.reduce_sum(conf_mask)
@@ -263,7 +263,7 @@ def yolo_v1_loss(y_true, y_pred):
 
 	# total loss
 	loss = 1.0 * loss_object + 0.001 * loss_non_object + 2.5 * loss_xy + 2.5 * loss_wh + 1.0 * loss_mean + 1.0 * loss_var
-	
+
 	return loss
 
 def yolo_objconf_loss(y_true, y_pred):
@@ -339,7 +339,7 @@ def yolo_wh_loss(y_true, y_pred):
 	true_wh_tensor = y_true[..., 3:5] # relative to image shape
 	if size == 5:
 		# Anchors
-		anchors = np.array([[0.34755122, 0.84069513], 
+		anchors = np.array([[0.34755122, 0.84069513],
 							[0.14585618, 0.25650666]], dtype=np.float32)
 		pred_wh_tensor = K.exp(y_pred[..., 3:5]) * K.reshape(anchors, [1, 1, 1, 2, 2]) # relative to image shape
 	else:
@@ -368,7 +368,7 @@ def yolo_var_loss(y_true, y_pred):
 def yolo_v2_loss(y_true, y_pred):
 	# Adjust prediction
 	# Anchors
-	anchors = np.array([[0.34755122, 0.84069513], 
+	anchors = np.array([[0.34755122, 0.84069513],
 						[0.14585618, 0.25650666]], dtype=np.float32)
 	# adjust x, y
 	pred_xy_tensor = K.sigmoid(y_pred[:, :, :, :, 1:3]) # relative to position to the containing cell
@@ -411,7 +411,7 @@ def yolo_v2_loss(y_true, y_pred):
 		rows.append(cols)
 		cols = []
 	offset = K.reshape(tf.convert_to_tensor(rows, dtype=np.float32), [1, 5, 8, 2, 2])
-	
+
 	# adjust true min and max
 	true_wh_cell = true_wh_tensor * K.reshape([grid, grid], [1, 1, 1, 2, 2])
 	true_wh_half = 0.5 * true_wh_cell
@@ -469,13 +469,13 @@ def yolo_v2_loss(y_true, y_pred):
 
 	# total loss
 	loss = 1.0 * loss_object + 0.005 * loss_non_object + 3.5 * loss_xy + 3.5 * loss_wh #+ 1.0 * loss_mean + 1.0 * loss_var
-	
+
 	return loss
 
 def yolo_v3_loss(y_true, y_pred):
 	# Adjust prediction
 	# Anchors
-	anchors = np.array([[0.34755122, 0.84069513], 
+	anchors = np.array([[0.34755122, 0.84069513],
 						[0.14585618, 0.25650666]], dtype=np.float32)
 	# adjust x, y
 	pred_xy_tensor = K.sigmoid(y_pred[:, :, :, :, 1:3]) # relative to position to the containing cell
@@ -541,6 +541,5 @@ def yolo_v3_loss(y_true, y_pred):
 
 	# total loss
 	loss = 1.0 * loss_object + 0.005 * loss_non_object + 3.5 * loss_xy + 3.5 * loss_wh + 1.0 * loss_mean + 1.0 * loss_var
-	
-	return loss
 
+	return loss

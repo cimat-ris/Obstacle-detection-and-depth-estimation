@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import math
 import os
-from ObstacleDetectionObjectives import numpy_iou
+from .ObstacleDetectionObjectives import numpy_iou
 
 class Obstacle(object):
 	def __init__(self, x, y, w, h, depth_seg=None, obs_stats=None, conf_score=None, iou=None):
@@ -103,7 +103,7 @@ def get_detected_obstacles_from_detector_v1(prediction, confidence_thr=0.5, outp
 	h_pred = prediction[0, :, 4]
 	mean_pred = prediction[0, :, 5]
 	var_pred = prediction[0, :, 6]
-	
+
 	# img shape
 	IMG_WIDTH = 256.
 	IMG_HEIGHT = 160.
@@ -276,7 +276,7 @@ def compute_detection_stats(detected_obstacles, gt_obstacles, iou_thresh = 0.5):
 				idx += 1
 			closer_gt_obstacles.append((gt_obstacles[max_idx], max_idx, max_iou, is_overlap))
 			det_obstacle.set_iou(max_iou)
-		
+
 		# Result: best iou, depth error, variance error, multiple detections
 		iou_for_each_gt_obstacle = np.zeros(shape=len(gt_obstacles), dtype=np.float32)
 		depth_error_for_each_gt_obstacle = np.zeros(shape=len(gt_obstacles), dtype=np.float32)
@@ -293,10 +293,10 @@ def compute_detection_stats(detected_obstacles, gt_obstacles, iou_thresh = 0.5):
 					depth_error_for_each_gt_obstacle[elem[1]] = rmse_error_on_vector(elem[0].depth_mean, detected_obstacles[it].depth_mean)
 					var_depth_error_for_each_gt_obstacle[elem[1]] = rmse_error_on_vector(elem[0].depth_variance, detected_obstacles[it].depth_variance)
 				it += 1
-		
+
 		n_detected_obstacles = 0
 		n_non_detected_obs = 0 # false negatives
-		
+
 		for n in n_valid_pred_for_each_gt_obstacle:
 			if n > 0:
 				n_detected_obstacles += 1
@@ -311,7 +311,7 @@ def compute_detection_stats(detected_obstacles, gt_obstacles, iou_thresh = 0.5):
 			avg_iou = np.mean(iou_for_each_gt_obstacle[np.nonzero(iou_for_each_gt_obstacle)])
 			avg_mean_depth_error = np.mean(depth_error_for_each_gt_obstacle[np.nonzero(depth_error_for_each_gt_obstacle)])
 			avg_var_depth_error = np.mean(var_depth_error_for_each_gt_obstacle[np.nonzero(var_depth_error_for_each_gt_obstacle)])
-		
+
 		#Compute Precision and Recall
 		true_positives = np.sum(n_valid_pred_for_each_gt_obstacle)
 		false_positives = len(detected_obstacles) - true_positives
@@ -360,7 +360,7 @@ def show_detections(rgb, detection, gt=None, save=True, save_dir = None, file_na
 		rgb_new[..., 1] = rgb
 		rgb_new[..., 2] = rgb
 		rgb = rgb_new
-	
+
 	output = rgb.copy()
 	det_obstacles_data = []
 	gt_obstacles_data = []
@@ -368,7 +368,7 @@ def show_detections(rgb, detection, gt=None, save=True, save_dir = None, file_na
 	for obs in detection:
 		cv2.rectangle(output, (obs.x, obs.y), (obs.x+obs.w, obs.y+obs.h), (0,0,255), 2)
 		det_obstacles_data.append((obs.x, obs.y, obs.w, obs.h, obs.depth_mean, obs.depth_variance, obs.confidence, obs.max_iou, obs.multiple_detection_flag))
-	
+
 	'''if gt is not None:
 		for obs in gt:
 			cv2.rectangle(output, (obs.x, obs.y),(obs.x+ obs.w, obs.y+obs.h), (0,255,0), 2)
@@ -391,7 +391,7 @@ def show_detections(rgb, detection, gt=None, save=True, save_dir = None, file_na
 				f.write('\nGT obstacles\n')
 				for x in gt_obstacles_data:
 					f.write('x:{},y:{},w:{},h:{},depth:{},var_depth:{},confidence:{}\n'.format(x[0], x[1], x[2], x[3], x[4], x[5], x[6]))
-	
+
 	cv2.imshow("Detections(RED:predictions,GREEN: GT", output)
 	cv2.waitKey(sleep_for)
 
@@ -434,7 +434,7 @@ def show_depth(rgb, depth, gt=None, save=True, save_dir=None, file_name=None, ma
 
 def load_model(name, config):
 	from models.JMOD2 import JMOD2
-	
+
 	model = JMOD2(config)
 	model.model.load_weights("weights/jmod2.hdf5")
 	detector_only = False
