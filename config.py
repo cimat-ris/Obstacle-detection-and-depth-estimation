@@ -49,6 +49,8 @@ misc_arg.add_argument('--log_dir', type=str, default='logs')#DIRECTORY WHERE TO 
 misc_arg.add_argument('--debug', type=str2bool, default=True)
 misc_arg.add_argument('--gpu_memory_fraction', type=float, default=0.8)
 misc_arg.add_argument('--max_image_summary', type=int, default=4)
+misc_arg.add_argument('--log_level',type=int, default=20,help='Log level (default: 20)')
+misc_arg.add_argument('--log_file',default='',help='Log file (default: standard output)')
 
 def get_config():
 	config, unparsed = parser.parse_known_args()

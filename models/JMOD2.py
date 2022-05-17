@@ -3,6 +3,7 @@ import sys
 import time
 import math
 import numpy as np
+import logging
 import tensorflow as tf
 import tensorflow.keras
 from keras.callbacks import ModelCheckpoint, EarlyStopping
@@ -30,12 +31,6 @@ from lib.EvaluationUtils import get_detected_obstacles_from_detector_v1, get_det
 
 class JMOD2(object):
     def __init__(self, config):
-        # tf config
-        tf_config = tf.compat.v1.ConfigProto
-        # TODO
-        #tf_config.gpu_options.per_process_gpu_memory_fraction = config.gpu_memory_fraction
-        #tf_config.gpu_options.visible_device_list = "0"
-        #set_session(tf.Session(config=tf_config))
         # config data
         self.config = config
         self.dataset = {}
@@ -230,7 +225,6 @@ class JMOD2(object):
                                 yolo_objconf_loss, yolo_nonobjconf_loss, yolo_xy_loss, yolo_wh_loss,
                                 yolo_mean_loss, yolo_var_loss]},
                                 loss_weights=[1.0, 1.0])
-        model.summary()#Print model
         return model
 
     def build_model_v2(self):
@@ -255,18 +249,17 @@ class JMOD2(object):
         # Model depth and detection
         model = Model(inputs= depth_model.inputs[0], outputs=[depth_model.outputs[0], out_detection])
         # Optimizator
-        opt = Adam(lr=self.config.learning_rate, clipnorm = 1.)
+        opt = Adam(learning_rate=self.config.learning_rate, clipnorm = 1.)
         model.compile(loss={'depth_output': log_normals_loss, 'detection_output':yolo_v2_loss},
                         optimizer=opt,
                         metrics={'depth_output': [rmse_metric, logrmse_metric, sc_inv_logrmse_metric],
                         'detection_output': [iou_metric, recall, precision,
                                             yolo_objconf_loss, yolo_nonobjconf_loss, yolo_xy_loss, yolo_wh_loss]},
                                             loss_weights=[1.0, 0.1])
-        model.summary()
         return model
 
     def train(self, initial_epoch=0):
-        # Save model summary
+        # Save model summary in a file
         orig_stdout = sys.stdout
         f = open(os.path.join(self.config.model_dir, 'model_summary.txt'), 'w')
         sys.stdout = f
@@ -278,15 +271,14 @@ class JMOD2(object):
         sys.stdout = orig_stdout
         f.close()
         # Save img model summaty
-        plot_model(self.model, show_shapes=True, to_file=os.path.join(self.config.model_dir, 'model_structure.png'))
+        plot_model(self.model, show_shapes=True, to_file=os.path.join(self.config.model_dir, 'model_structure.pdf'))
         # Inicial time
         t0 = time.time()
         # Samples per epoch
-        print(len(self.training_set))
+        logging.info(len(self.training_set))
         samples_per_epoch = int(math.floor(len(self.training_set) / self.config.batch_size))
         # Validation steps
         val_step = int(math.floor(len(self.validation_set) / self.config.batch_size))
-        print("Samples per epoch: {}".format(samples_per_epoch))
         # Callbacks
         pb = PrintBatch()
         tb_x, tb_y = self.tensorboard_data_generator(self.config.max_image_summary)
