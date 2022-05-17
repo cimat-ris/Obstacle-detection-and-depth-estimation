@@ -58,7 +58,7 @@ class TensorBoardCustom(Callback):
 					val_data = self.X_test[:cut_v_data] + [0]
 					tensors = self.model.input + [K.learning_phase()]
 				except:
-					print "Tensor batch size not defined. Skipping"
+					print("Tensor batch size not defined. Skipping")
 					return
 			else:
 				val_data = self.X_test
