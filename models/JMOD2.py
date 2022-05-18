@@ -61,6 +61,7 @@ class JMOD2(object):
         dataset, dataset_name = self.load_dataset()
         # Read dir
         self.dataset[dataset_name] = dataset
+        logging.info("Loading dataset {}".format(dataset_name))
         self.dataset[dataset_name].read_data()
         # Training and test dir
         self.training_set, self.test_set = self.dataset[dataset_name].generate_train_test_data()
@@ -75,8 +76,7 @@ class JMOD2(object):
         features = np.asarray(features)
         features = features.astype('float32')
         features /= 255.0
-        # Prepare output : lista de numpy arrays
-        print(features.shape)
+        # Prepare output : list of numpy arrays
         labels_depth = np.zeros(shape=(features.shape[0],features.shape[1],features.shape[2],1), dtype=np.float32) # Gray Scale
         if self.config.version_model == 1:
             labels_obs = np.zeros(shape=(features.shape[0],40,7), dtype=np.float32) # Obstacle output
@@ -85,7 +85,7 @@ class JMOD2(object):
         i = 0
         for elem in label:
             elem["depth"] = np.asarray(elem["depth"]).astype(np.float32)
-            # Change depth map to meters
+            # Change depth map in 8bits to meters
             elem["depth"] = -4.586e-09 * (elem["depth"] ** 4) + 3.382e-06 * (elem["depth"] ** 3) - 0.000105 * (elem["depth"] ** 2) + 0.04239 * elem["depth"] + 0.04072
             elem["depth"] /= 39.75 # scale 0 to 1
             labels_depth[i, ...] = elem["depth"]
@@ -94,11 +94,11 @@ class JMOD2(object):
         return features, [labels_depth,labels_obs]
 
     def train_data_generator(self):
+        # Shuffle
         if self.shuffle:
             np.random.shuffle(self.training_set)
         curr_batch = 0
         self.training_set = list(self.training_set)
-        print(len(self.training_set))
         while 1:
             if (curr_batch + 1) * self.config.batch_size > len(self.training_set):
                 np.random.shuffle(self.training_set)
@@ -250,7 +250,7 @@ class JMOD2(object):
         model = Model(inputs= depth_model.inputs[0], outputs=[depth_model.outputs[0], out_detection])
         # Optimizator
         opt = Adam(learning_rate=self.config.learning_rate, clipnorm = 1.)
-        model.compile(loss={'depth_output': log_normals_loss, 'detection_output':yolo_v2_loss},
+        model.compile(loss={'depth_output': log_normals_loss,'detection_output':yolo_v2_loss},
                         optimizer=opt,
                         metrics={'depth_output': [rmse_metric, logrmse_metric, sc_inv_logrmse_metric],
                         'detection_output': [iou_metric, recall, precision,
@@ -275,22 +275,24 @@ class JMOD2(object):
         # Inicial time
         t0 = time.time()
         # Samples per epoch
-        logging.info(len(self.training_set))
+        logging.info("Data in our training set {}".format(len(self.training_set)))
         samples_per_epoch = int(math.floor(len(self.training_set) / self.config.batch_size))
         # Validation steps
         val_step = int(math.floor(len(self.validation_set) / self.config.batch_size))
+        # TODO
         # Callbacks
-        pb = PrintBatch()
-        tb_x, tb_y = self.tensorboard_data_generator(self.config.max_image_summary)
-        tb = TensorBoardCustom(self.config, tb_x, tb_y, self.config.tensorboard_dir)
-        model_checkpoint = ModelCheckpoint(os.path.join(self.config.model_dir, 'weights-{epoch:02d}-{loss:.2f}.hdf5'),monitor='val_loss', verbose=2, save_best_only=True, save_weights_only=False,mode='min', period=self.config.log_step) # Save weights every 20 epoch
+        # pb = PrintBatch()
+        # tb_x, tb_y = self.tensorboard_data_generator(self.config.max_image_summary)
+        # tb = TensorBoardCustom(self.config, tb_x, tb_y, self.config.tensorboard_dir)
+        # model_checkpoint = ModelCheckpoint(os.path.join(self.config.model_dir, 'weights-{epoch:02d}-{loss:.2f}.hdf5'),monitor='val_loss', verbose=2, save_best_only=True, save_weights_only=False,mode='min', period=self.config.log_step) # Save weights every 20 epoch
+        model_checkpoint = ModelCheckpoint(os.path.join(self.config.model_dir, 'weights-{epoch:02d}-{loss:.2f}.hdf5'),monitor='val_loss', verbose=2, save_best_only=True, save_weights_only=False,mode='min', save_freq=int(self.config.log_step * samples_per_epoch)) # Save weights every 20 epoch
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=60)
         # Train
-        history = self.model.fit_generator(generator=self.train_data_generator(),
+        history = self.model.fit(self.train_data_generator(),
                             steps_per_epoch=samples_per_epoch,
-                            callbacks=[pb, model_checkpoint, tb, es],
-                            validation_data=self.validation_data_generator(),
-                            validation_steps=val_step,
+                            #callbacks=[pb, model_checkpoint, tb, es],
+                            #validation_data=self.validation_data_generator(),
+                            #validation_steps=val_step,
                             epochs=self.config.num_epochs,
                             verbose=2,
                             initial_epoch=initial_epoch)

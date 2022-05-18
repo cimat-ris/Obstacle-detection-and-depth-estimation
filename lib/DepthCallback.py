@@ -43,11 +43,12 @@ class TensorBoardCustom(Callback):
 									 layer.output, max_outputs=self.config.max_image_summary)
 					tf.summary.image('{}_gt_dem'.format(layer.name),
 									 self.Y_test[0], max_outputs=self.config.max_image_summary)
-		self.merged = tf.summary.merge_all()
-		if self.write_graph:
-			self.writer = tf.summary.FileWriter(self.log_dir, self.sess.graph)
-		else:
-			self.writer = tf.summary.FileWriter(self.log_dir)
+		# TODO
+		#self.merged = tf.summary.merge_all()
+		# if self.write_graph:
+		#	self.writer = tf.summary.FileWriter(self.log_dir, self.sess.graph)
+		#else:
+		#	self.writer = tf.summary.FileWriter(self.log_dir)
 
 	def on_batch_end(self, batch, logs=None):
 		logs = logs or {}

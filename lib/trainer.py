@@ -1,4 +1,4 @@
-import os
+import os, logging
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -9,11 +9,10 @@ matplotlib.use('Agg')
 class Trainer(object):
 	def __init__(self, config, model, rng):
 		self.config = config
-		print(config)
 		self.model = model
 
 	def train(self):
-		print("[*] Training starts...")
+		logging.info("Training starts...")
 		history = self.model.train()
 		self.plot_metrics(history)
 
